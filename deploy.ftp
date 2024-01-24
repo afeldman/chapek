@@ -1,0 +1,6 @@
+anon 
+
+bin 
+prompt 
+mput build/*.pc  
+quit 

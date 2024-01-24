@@ -1,0 +1,23 @@
+-----------------------------------------------------------------------------------
+--! @file capek.header
+--! @brief The Headerfile to the capek KAREL UNIT Test
+--
+--! @author anton feldmann
+-----------------------------------------------------------------------------------
+
+ROUTINE capek_init                                                   							FROM capek
+ROUTINE capek_output                                                 							FROM capek
+
+ROUTINE capek_test(name : STRING; result : BOOLEAN)                  							FROM capek
+
+ROUTINE capek_assert(b : BOOLEAN)                          							: BOOLEAN 	FROM capek
+ROUTINE capek_eq_int(expected : INTEGER; actual : INTEGER) 							: BOOLEAN 	FROM capek
+ROUTINE capek_eq_pip(fname : STRING)                       							: BOOLEAN 	FROM capek
+ROUTINE capek_eq_pos(expected : XYZWPR; actual : XYZWPR)   							: BOOLEAN 	FROM capek
+ROUTINE capek_eq_real(expected : REAL; actual : REAL)      							: BOOLEAN 	FROM capek
+ROUTINE capek_almost_eq_real(expected : REAL; actual : REAL; ep:  REAL)		      	: BOOLEAN 	FROM capek
+ROUTINE capek_eq_str(expected : STRING; actual : STRING)   							: BOOLEAN 	FROM capek
+
+ROUTINE capek_init_pipe                                              						  	FROM capek
+ROUTINE capek_close_pipe                                             							FROM capek
+ROUTINE capek_pipe(s : STRING)                                       							FROM capek

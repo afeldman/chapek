@@ -1,0 +1,376 @@
+-----------------------------------------------------------------------------------
+--! @file test_capek
+--! @brief The Headerfile to the capek KAREL UNIT Test
+--
+--! @author anton feldmann
+-----------------------------------------------------------------------------------
+
+--! @brief program  test for the capek  start 
+PROGRAM test_capek
+
+--! @brief Not a moving program
+%NOLOCKGROUP
+
+--! @brief variable
+VAR
+  test_count   FROM capek : INTEGER		--<! count the tests
+  fail_count   FROM capek : INTEGER		--<! count the failures 
+  pass_count   FROM capek : INTEGER		--<! count the success on tests
+  assrtn_count FROM capek : INTEGER		--<! count the assertions
+  error_msg    FROM capek : STRING[254] --<! the error massage
+
+  
+--! @brief use the capek header file
+%INCLUDE capek.header
+
+--! @brief test private routines
+ROUTINE capek_fail(name : STRING) FROM capek 	--<! routine in capek
+ROUTINE capek_pass                FROM capek	--<! routine in capek
+
+
+--! @brief test failures
+--
+--! @detail  this routine runs in an error
+--
+--! @return BOOLEAN
+ROUTINE t_fail : BOOLEAN
+  VAR
+    i : INTEGER
+    b : BOOLEAN
+  BEGIN
+    i = fail_count
+    -- fail the test
+    error_msg = 'this is not a real failure... ignore me'
+	-- use the capek_fail routine
+    capek_fail('t_fail')
+
+    b = capek_eq_int(i+1, fail_count) -- test if the integer ar equal
+    -- reset fail_count
+    fail_count = i
+    -- use i
+    i = i + 1
+
+    RETURN(b) -- return if the return from capek_eq_int is equal
+  END t_fail -- end failure test
+
+--! @brief test pass
+--
+--! @detail  test the pass conterint
+--
+--! @return BOOLEAN
+ROUTINE t_pass : BOOLEAN
+  VAR
+    i : INTEGER
+    b : BOOLEAN
+  BEGIN
+    i = pass_count	--<! pass counter see capek
+    capek_pass		--<! capak pass routine
+    b = capek_eq_int(i+1,pass_count)
+    -- reset pass_count
+    pass_count = i
+    RETURN(b)
+  END t_pass -- pass test routine finished
+
+--! @brief test capek_test routine
+--
+--! @detail  test the capek_test routine
+--
+--! @return BOOLEAN
+ROUTINE t_test_p : BOOLEAN
+  VAR
+    i : INTEGER
+    b : BOOLEAN
+  BEGIN
+    i = pass_count
+    capek_test('capek_test() on pass', true)
+    b = capek_eq_int(i+1, pass_count)
+    -- reset pass_count
+    pass_count = i
+    RETURN(b)
+  END t_test_p
+
+--! @brief test capek_test routine for fail
+--
+--! @detail  test the capek_test routine for fail
+--
+--! @return BOOLEAN
+ROUTINE t_test_f : BOOLEAN
+  VAR
+    i : INTEGER
+    b : BOOLEAN
+  BEGIN
+    i = fail_count
+    error_msg = 'this one is responsible for the F'
+    capek_test('capek_test() on fail', false)
+    b = capek_eq_int(i+1, fail_count)
+    -- reset fail_count
+    fail_count = i
+    RETURN(b)
+  END t_test_f
+
+--! @brief test capek_assert routine
+--
+--! @detail  test the capek_assert routine
+--
+--! @return BOOLEAN
+ROUTINE t_assert_t : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_assert(true) --<! assert function
+    k = assrtn_count
+    c = capek_eq_int(i+1, k)
+    RETURN(b)
+  END t_assert_t
+
+--! @brief test capek_assert routine fail
+--
+--! @detail  test the capek_assert routine fails
+--
+--! @return BOOLEAN
+ROUTINE t_assert_f : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_assert(false)
+    k = assrtn_count
+    c = capek_eq_int(i+1, k)
+    RETURN(NOT(b))
+  END t_assert_f
+
+--! @brief test int on equality
+--! @return BOOLEAN
+ROUTINE t_eq_intp : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_int(1,1) --<! check on int
+    k = assrtn_count
+    c = capek_eq_int(i+1, k)
+    RETURN(b)
+  END t_eq_intp
+
+--! @brief test capek_eq_int routine fail
+--
+--! @detail  test the capek_eq_int routine fails
+--
+--! @return BOOLEAN
+ROUTINE t_eq_intf : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_int(1,2) --<! is a failure
+    k = assrtn_count
+    c = capek_eq_str('Expected 1 but got 2', error_msg)
+    c = capek_eq_int(i+1, k)
+    RETURN(NOT(b))
+  END t_eq_intf
+
+--! @brief test capek_eq_real routine
+--
+--! @detail  test the capek_eq_real routine
+--
+--! @return BOOLEAN
+ROUTINE t_eq_rp : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_real(3.14,3.14) --<! check real
+    k = assrtn_count
+    c = capek_eq_int(i+1, k)
+    RETURN(b)
+  END t_eq_rp
+
+--! @brief test capek_eq_real routine fail
+--
+--! @detail  test the capek_eq_real routine fails
+--
+--! @return BOOLEAN
+ROUTINE t_eq_rf : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_real(3.14,3.15)  --<! generates failure
+    k = assrtn_count
+    c = capek_eq_str('Expected 3.14 but got 3.15', error_msg)
+    c = capek_eq_int(i+1, k)
+    RETURN(NOT(b))
+  END t_eq_rf
+
+--! @brief test capek_eq_str routine
+--
+--! @detail  test the capek_eq_str routine
+--
+--! @return BOOLEAN
+ROUTINE t_eq_strp : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_str('a','a') --<! check the sting
+    k = assrtn_count
+    c = capek_eq_int(i+1, k)
+    RETURN(b)
+  END t_eq_strp
+
+--! @brief test capek_eq_str routine fail
+--
+--! @detail  test the capek_eq_str routine fails
+--
+--! @return BOOLEAN
+ROUTINE t_eq_strf : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_str('a','b')   --<! creates a failure on the sting test
+    k = assrtn_count
+    c = capek_eq_str('Expected "a" but got "b"', error_msg)
+    c = capek_eq_int(i+1, k)
+    RETURN(NOT(b))
+  END t_eq_strf
+
+--! @brief test capek_eq_position routine
+--
+--! @detail  test the capek_eq_position routine
+--
+--! @return BOOLEAN
+ROUTINE t_eq_posp : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+    p : XYZWPR
+  BEGIN
+    p.x = 0.0
+    p.y = 0.0
+    p.z = 0.0
+    p.w = 0.0
+    p.p = 0.0
+    p.r = 0.0
+
+    i = assrtn_count
+    b = capek_eq_pos(p,p) --<! check positon.
+    k = assrtn_count
+    c = capek_eq_int(i+1, k)
+    RETURN(b)
+  END t_eq_posp
+
+--! @brief test capek_eq_position routine fails
+--
+--! @detail  test the capek_eq_position routine fails
+--
+--! @return BOOLEAN
+ROUTINE t_eq_posf : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+    p : XYZWPR
+    p2 : XYZWPR
+  BEGIN
+    p.x = 0.0
+    p.y = 0.0
+    p.z = 0.0
+    p.w = 0.0
+    p.p = 0.0
+    p.r = 0.0
+    p2.x = 1.0
+    p2.y = 0.0
+    p2.z = 0.0
+    p2.w = 0.0
+    p2.p = 0.0
+    p2.r = 0.0
+
+    i = assrtn_count
+    b = capek_eq_pos(p,p2) --<! not the same position
+    k = assrtn_count
+    c = capek_eq_str('Expected: ' + chr(13) &
+      + 'X: 0.0 Y: 0.0 Z: 0.0' + chr(13) &
+      + 'W: 0.0 P: 0.0 R: 0.0' + chr(13) &
+      + 'Actual: ' + chr(13) &
+      + 'X: 1.0 Y: 0.0 Z: 0.0' + chr(13) &
+      + 'W: 0.0 P: 0.0 R: 0.0', error_msg)
+    c = capek_eq_int(i+1, k)
+    RETURN(NOT(b))
+  END t_eq_posf
+
+--! @brief test capek_eq_position routine uninit
+--
+--! @detail  test the capek_eq_position routine uninit
+--
+--! @return BOOLEAN
+ROUTINE t_eq_posu : BOOLEAN
+  VAR
+    i : INTEGER
+    k : INTEGER
+    b : BOOLEAN
+    c : BOOLEAN
+    p : XYZWPR
+  BEGIN
+    i = assrtn_count
+    b = capek_eq_pos(p,p) --<! check without uninizilices position 
+    k = assrtn_count
+    c = capek_eq_str('Expected and/or actual are UNINIT', error_msg)
+    c = capek_eq_int(i+1, k)
+    RETURN(NOT(b))
+  END t_eq_posu
+
+--! @brief run all tests
+--
+--! @detail  all the routines are handed to the capek_test routine.
+--
+--! @return BOOLEAN
+BEGIN
+  capek_init --<! initizalize the capek lib
+
+  capek_test('capek_fail()', t_fail)
+  capek_test('capek_pass()', t_pass)
+  capek_test('capek_test() on success', t_test_p)
+  capek_test('capek_test() on fail', t_test_f)
+  capek_test('capek_assert(true)', t_assert_t)
+  capek_test('capek_assert(false)', t_assert_f)
+  capek_test('capek_eq_int pass', t_eq_intp)
+  capek_test('capek_eq_int fail', t_eq_intf)
+  capek_test('capek_eq_r pass', t_eq_rp)
+  capek_test('capek_eq_r fail', t_eq_rf)
+  capek_test('capek_eq_str pass', t_eq_strp)
+  capek_test('capek_eq_str fail', t_eq_strf)
+  capek_test('capek_eq_pos pass', t_eq_posp)
+  capek_test('capek_eq_pos fail', t_eq_posf)
+  capek_test('capek_eq_pos with uninit', t_eq_posu)
+
+  capek_output --<! close the capek framework
+END test_capek

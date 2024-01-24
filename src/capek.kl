@@ -1,0 +1,410 @@
+-----------------------------------------------------------------------------------
+--! @file capek
+--! @brief A KAREL UNIT TEST SUITE 
+--
+--! @author anton feldmann
+--! @version 0.0.1
+-----------------------------------------------------------------------------------
+
+
+--! @brief start of the capek program library
+PROGRAM capek
+
+--! @brief no motion group
+%ALPHABETIZE 
+%COMMENT = 'CAPEK'
+%NOLOCKGROUP 
+%NOPAUSE = COMMAND + TPENABLE + ERROR 
+
+--! @brief constant
+CONST
+  VERSION   = '0.0.1'
+  LINE_WRAP = 40
+  
+  -- file pipe CAPEK.dat
+  PIPE_FILE = 'PIP:CAPEK.DAT'
+  
+  -- file pipe for failuers chapek_fail.dat
+  FAIL_FILE = 'PIP:CAPEK_FAIL.DAT'
+  
+--! @brief variable
+VAR
+  response     : FILE
+  pipe_f       : FILE
+  other_f      : FILE
+  fail_f       : FILE
+  test_count   : INTEGER
+  fail_count   : INTEGER
+  pass_count   : INTEGER
+  assrtn_count : INTEGER
+  error_msg    : STRING[254]
+
+  -- time trigger system  
+  start_time   : INTEGER
+  end_time     : INTEGER
+  total_time   : REAL
+  entry        : INTEGER
+  status       : INTEGER
+
+  
+--! include the string library header file
+%INCLUDE strlib.hkl
+%INCLUDE math.hkl
+%INCLUDE capek.hkl
+
+-- begin program
+BEGIN
+-- end program
+END capek
+
+--! @brief initialize the capek test unit suite
+--
+--! @detail its a public routine to inizilize all the variables. 
+--! The File is open for the HTML output.
+ROUTINE capek_init
+  BEGIN
+  -- get the clock value of the fast_clock
+    GET_VAR(entry, '*system*', '$fast_clock', start_time, status)
+
+	-- response file
+    OPEN FILE response ('RW', 'RD:RESPONSE.HTM')
+	-- failure file open for read write access
+    OPEN FILE fail_f   ('RW', FAIL_FILE)
+
+	-- the html header of the response file
+    WRITE response (
+        '<!DOCTYPE html>',
+        '<html><head>',
+        '<title>Capek</title>',
+        '<style>body { padding: 20px; }</style>',
+        '<meta charset="UTF-8" />',
+        '</head><body>',
+        '<pre>', CR,
+        'Capek', CR, CR)
+
+    test_count    = 0
+    fail_count    = 0
+    pass_count    = 0
+    assrtn_count  = 0
+END capek_init
+
+--! @brief fail a test
+--
+--! @detail If a ROUTINE passes to capek fails a test. This ROUTINE shouled used private. To keep track on all the failures a counter is accumulated
+--
+--! @param name	:	STRING
+ROUTINE capek_fail
+  BEGIN
+    fail_count = fail_count + 1
+
+    WRITE fail_f (fail_count, ') Failure:', CR)
+    WRITE fail_f (name, CR)
+    WRITE fail_f (error_msg,CR,CR)
+  END capek_fail
+
+--! @brief pass a test
+--
+--! @detail If a routine handed to capek pass a test. This ROUTINE shouled used private. To keep track on all the passes a counter is accumulated
+ROUTINE capek_pass
+  BEGIN
+    pass_count = pass_count + 1
+  END capek_pass
+
+--! @brief performe a test
+--
+--! @detail To start a test us this ROUTINE.
+--
+--! @param name 	:	STRING describing what this test is testing
+--! @param result	:	BOOLEAN that determines if the test passes or fails
+--
+--! <h1>Examples</h1>
+--
+--! capek_test('this should be a positive test', true) => test passes
+--! capek_test('this should be a negative test', false) => test fails
+ROUTINE capek_test
+  BEGIN
+    test_count = test_count + 1
+
+    IF result THEN
+      WRITE response ('.')
+      capek_pass
+    ELSE
+      WRITE response ('F')
+      capek_fail(name)
+    ENDIF
+
+    IF ((pass_count+fail_count) MOD LINE_WRAP = 0) THEN
+      WRITE response (CR)
+    ENDIF
+  END capek_test
+
+--! @brief Assert that something is true
+--
+--! @param actual : BOOLEAN
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_assert(true) => true
+--! capek_assert(false) => false
+ROUTINE capek_assert
+  BEGIN
+    assrtn_count = assrtn_count + 1
+
+    IF actual THEN
+      RETURN(true)
+    ELSE
+      error_msg = 'Expected true but got false'
+      RETURN(false)
+    ENDIF
+  END capek_assert
+
+--! @brief Assert that two integer are equal
+--
+--! @param expected : INTEGER
+--! @param actual 	: INTEGER
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_eq_int(1,1) => true
+--! capek_eq_int(1,2) => false
+ROUTINE capek_eq_int
+  BEGIN
+    assrtn_count = assrtn_count + 1
+
+    IF expected=actual THEN
+      RETURN(true)
+    ELSE
+      error_msg = 'Expected ' + int2str(expected) + ' but got ' + int2str(actual)
+      RETURN(false)
+    ENDIF
+  END capek_eq_int
+
+--! @brief Assert that two reals are equal
+--
+--! @param expected : REAL
+--! @param actual 	: REAL
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_eq_r(1.0,1.0) => true
+--! capek_eq_r(1.1,1.0) => false
+ROUTINE capek_eq_real
+  BEGIN
+    assrtn_count = assrtn_count + 1
+
+    IF expected=actual THEN
+      RETURN(true)
+    ELSE
+      error_msg = 'Expected ' + real2str(expected) + ' but got ' + real2str(actual)
+      RETURN(false)
+    ENDIF
+  END capek_eq_real
+
+--! @brief Assert that two reals are equal up to a epsilon
+--
+--! @param expected : REAL
+--! @param actual 	: REAL
+--! @param epsilon 	: REAL
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_almost_eq_real(1.0,1.0,0.001) => true
+--! capek_almost_eq_real(1.1,1.0,0.001) => false
+ROUTINE capek_almost_eq_real
+  BEGIN
+    assrtn_count = assrtn_count + 1
+
+    IF almostEq(expected, actual, epsilon) THEN
+      RETURN(true)
+    ELSE
+      error_msg = 'Expected ' + real2str(expected) + ' with a variance of ' + real2str(epsilon) + ' but got ' + real2str(actual)
+      RETURN(false)
+    ENDIF
+  END capek_almost_eq_real
+  
+--! @brief Assert that two strings are equal
+--
+--! @param expected : STRING
+--! @param actual 	: STRING
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_eq_str('true','true') => true
+--! capek_eq_str('true','false') => true
+ROUTINE capek_eq_str
+  BEGIN
+    assrtn_count = assrtn_count + 1
+
+    IF UNINIT(expected) THEN
+      error_msg = 'Expected was UNINIT'
+      RETURN(false)
+    ENDIF
+
+    IF UNINIT(actual) THEN
+      error_msg = 'Actual was UNINIT'
+      RETURN(false)
+    ENDIF
+
+    IF expected=actual THEN
+      RETURN(true)
+    ELSE
+      error_msg = 'Expected "' + expected + '"' + chr(13) + ' but got "' + actual + '"'
+      RETURN(false)
+    ENDIF
+  END capek_eq_str
+
+--! @brief Assert that two positions are equal
+--
+--! @detail returns true if the X,Y,Z,W,P and R components of two positions are equal
+--
+--! @param expected : XYZWPR
+--! @param actual 	: XYZWPR
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_eq_pos(pos1,pos1) => true
+--! capek_eq_pos(pos1,pos2) => true
+ROUTINE capek_eq_pos
+  BEGIN
+    assrtn_count = assrtn_count + 1
+
+    IF UNINIT(expected) OR UNINIT(actual) THEN
+      error_msg = 'Expected and/or actual are UNINIT'
+      RETURN(false)
+    ENDIF
+
+    IF (expected.x=actual.x) AND (expected.y=actual.y) AND (expected.z=actual.z) AND &
+       (expected.w=actual.w) AND (expected.p=actual.p) AND (expected.r=actual.r) THEN
+      RETURN(true)
+    ELSE
+      error_msg = 'Expected: ' + chr(13) &
+        + pose2str(expected) + chr(13) &
+        + 'Actual: ' + chr(13) &
+        + pose2str(actual)
+      RETURN(false)
+    ENDIF
+  END capek_eq_pos
+
+--! @brief Open The Capek Pipe for reading and writing
+--
+--! @detail This ROUTINE is used in cojunction with "capek_close_pipe" and "capek_pipe" to test long strings are equals
+ROUTINE capek_init_pipe
+  BEGIN
+    OPEN FILE pipe_f ('RW', PIPE_FILE)
+  END capek_init_pipe
+
+--! @brief Close The Capek Pipe for reading and writing
+--
+--! @detail This ROUTINE closes the CAPEK Pipe
+ROUTINE capek_close_pipe
+  BEGIN
+    CLOSE FILE pipe_f
+  END capek_close_pipe
+
+--! @brief write to the CAPEK Pipe file
+--
+--! @detail This ROUTINE is in conjunction with "capek_eq_pip" to test that the value of the CAPEK pipe file is equal to the given file
+--
+--! @param s : STRING
+ROUTINE capek_pipe(s : STRING)
+  BEGIN
+    WRITE pipe_f (s)
+  END capek_pipe
+
+--! @brief Assert that the CAPEK pipe is equal to the provided FILE
+--
+--! @param fname : STRING name of the file
+--! @return BOOLEAN
+--
+--! <h1>Examples</h1>
+--
+--! capek_eq_pip('MD:somefile.dat') => if the CAPEK file has the same contents of "MD:somefile.dat", false otherwise
+--
+ROUTINE capek_eq_pip
+  VAR
+    e      : STRING[64]
+    a      : STRING[64]
+    i      : INTEGER
+    k      : INTEGER
+    j      : INTEGER
+    status : INTEGER
+    b      : BOOLEAN
+    r      : BOOLEAN
+  BEGIN
+    r = true
+    OPEN FILE pipe_f ('RO', PIPE_FILE)
+    OPEN FILE other_f ('RO', fname)
+    BYTES_AHEAD(pipe_f, i, status)
+    BYTES_AHEAD(other_f, k, status)
+
+    WHILE (i > 0) AND (k > 0) DO
+      IF i > k THEN
+        j = k
+      ELSE
+        j = i
+      ENDIF
+
+      READ pipe_f  (e::j::0)
+      READ other_f (a::j::0)
+      b = capek_eq_str(e, a)
+      IF NOT(b) THEN
+        r = false
+      ENDIF
+
+      BYTES_AHEAD(pipe_f, i, status)
+      BYTES_AHEAD(other_f, k, status)
+    ENDWHILE
+
+    CLOSE FILE pipe_f
+    CLOSE FILE other_f
+
+    RETURN(r)
+  END capek_eq_pip
+
+--! @brief Write the results of CAPEK test suite into the file
+ROUTINE capek_output
+  VAR
+    i      : INTEGER
+    b      : INTEGER
+    status : INTEGER
+    s      : STRING[254]
+  BEGIN
+    GET_VAR(entry, '*system*', '$fast_clock', end_time, status)
+    total_time = end_time - start_time
+
+    -- make sure we do at least 1 ITP
+    IF total_time = 0 THEN
+      total_time = 2
+    ENDIF
+
+    WRITE response (CR,CR)
+
+    WRITE response ('Finished in ', real2str((total_time / 1000.0)), ' seconds', CR)
+    WRITE response (real2str(test_count/(total_time/1000.0)), ' tests/sec, ')
+    WRITE response (real2str(assrtn_count/(total_time/1000.0)), ' assertions/sec', CR, CR)
+
+    CLOSE FILE fail_f
+    OPEN FILE fail_f ('RO', FAIL_FILE)
+    BYTES_AHEAD(fail_f, b, status)
+    WHILE b > 0 DO
+      READ fail_f (s::b::0)
+      WRITE response (s)
+      BYTES_AHEAD(fail_f, b, status)
+    ENDWHILE
+    CLOSE FILE fail_f
+
+    WRITE response (int2str(test_count), ' tests, ')
+    WRITE response (int2str(assrtn_count), ' assertions, ')
+    WRITE response (int2str(fail_count), ' failures', CR)
+
+    WRITE response ('</pre></body></html>', CR)
+
+    CLOSE FILE response
+  END capek_output
+
